@@ -1,0 +1,3 @@
+[submodule "mlogger"]
+	path = mlogger
+	url = https://github.com/mtvy/mlogger.git
