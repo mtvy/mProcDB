@@ -5,9 +5,9 @@
 
 ## Setup
 ```bash
-> git clone https://github.com/mtvy/mProcDB.git
-> pip install -r requirements.txt
+> git submodule add https://github.com/mtvy/mProcDB.git
 > cd mProcDB
+> pip install -r requirements.txt
 > python3 mprocdb.py
 ```
 <img width="1273" alt="Снимок экрана 2022-11-02 в 18 29 03" src="https://user-images.githubusercontent.com/44533918/199547460-dbfd4c8d-ab24-403f-abcd-a910357adc86.png">

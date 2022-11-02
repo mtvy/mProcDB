@@ -1,5 +1,5 @@
 #/==================================================================\#
-# database.py                                         (c) Mtvy, 2022 #
+# mprocdb.py                                          (c) Mtvy, 2022 #
 #\==================================================================/#
 #                                                                    #
 # Copyright (c) 2022. Mtvy (Matvei Prudnikov, m.d.prudnik@gmail.com) #
@@ -10,11 +10,11 @@
 from sys          import argv as _dvars
 from typing       import Any, Callable, Dict, List, Tuple
 from json         import dump as _dump, load as _load
-from psycopg2     import connect as connect_db
+from psycopg2     import connect as connect_db, sql
 from progress.bar import IncrementalBar
+from decouple     import config
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-from psycopg2 import sql
-from decouple import config
+
 import os
 
 if __name__ == "__main__":
@@ -123,7 +123,9 @@ def __load_tables(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, *
         bar = IncrementalBar(f'\t{GRY}[LOAD_{_tb}]', max = len(elems))
         for elem in elems:
             bar.next(); vls = []
-            for it in elem:
+            for it, ind in zip(elem, range(len(elem))):
+                if list(_ctbs[_tb].values())[ind] == 'serial':
+                    continue
                 if isinstance(it, str):
                     it = it.replace("'", "''")
                     vls.append(f"{it}")
@@ -137,7 +139,7 @@ def __load_tables(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, *
                     _write(f'\n\t{GRY}[LOAD_{_tb}][{RED}unsupported_type{GRY}]{DF}')
                     break
             else:
-                if not insert_db(_tb, list(_ctbs[_tb].keys()), vls, _w_con): 
+                if not insert_db(_tb, [it for it in _ctbs[_tb].keys() if _ctbs[_tb][it] != 'serial'], vls, _w_con): 
                     _write(f'\t{GRY}[LOAD_{_tb}][{RED}False{GRY}]{DF}\n')
                     break
                 continue
@@ -152,23 +154,23 @@ def __load_tables(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, *
 
 #\------------------------------------------------------------------/# 
 @mlogger.logging()
-def __cr_database(_write : Callable[[str], None], _w_con : Dict, **_) -> None:
+def __cr_database(_write : Callable[[str], None], _w_con : Dict, _p_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}----------CREATE-DB-----------{DF}')
 
     _write(f'\t{GRY}[CR_DB_{_w_con["dbname"]}]{DF}')
-    if push_msg(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(_w_con["dbname"])), _w_con):
+    if push_msg(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(_w_con["dbname"])), _p_con):
         _write(f'\t{GRY}[CR_DB_{_w_con["dbname"]}][{GRN}True{GRY}]{DF}\n')
     else:
         _write(f'\t{GRY}[CR_DB_{_w_con["dbname"]}][{RED}False{GRY}]{DF}\n')
 
     _write(f'\t{GRY}[CR_USR_{_w_con["user"]}]{DF}')
-    if push_msg(f"CREATE USER {_w_con['user']} WITH ENCRYPTED PASSWORD '{_w_con['password']}'", _w_con):
+    if push_msg(f"CREATE USER {_w_con['user']} WITH ENCRYPTED PASSWORD '{_w_con['password']}'", _p_con):
         _write(f'\t{GRY}[CR_DB_{_w_con["dbname"]}][{GRN}True{GRY}]{DF}\n')
     else:
         _write(f'\t{GRY}[CR_DB_{_w_con["dbname"]}][{RED}False{GRY}]{DF}\n')
     
     _write(f'\t{GRY}[GRANT_PRIVILEGES]{DF}')
-    if push_msg(f'GRANT ALL PRIVILEGES ON DATABASE {_w_con["dbname"]} TO {_w_con["user"]}', _w_con):
+    if push_msg(f'GRANT ALL PRIVILEGES ON DATABASE {_w_con["dbname"]} TO {_w_con["user"]}', _p_con):
         _write(f'\t{GRY}[GRANT_PRIVILEGES][{GRN}True{GRY}]{DF}\n')
     else:
         _write(f'\t{GRY}[GRANT_PRIVILEGES][{RED}False{GRY}]{DF}\n')
@@ -184,7 +186,10 @@ def __cr_tables(_write : Callable[[str], None], _ctbs : List, _w_con : Dict, **_
     for _ctb, _tb in zip(_ctbs.values(), _ctbs.keys()):
         txt = ''; _write(f'\t{GRY}[DB_{_tb}]{DF}')
         for _vtb, _ttb in zip(_ctb.keys(), _ctb.values()):
-            txt = f'{txt}{_vtb} {_ttb}, '
+            if _ttb == 'serial':
+                txt = f'{txt}id serial primary key, '
+            else:
+                txt = f'{txt}{_vtb} {_ttb}, '
         txt = txt[:-2]
         if push_msg(f'CREATE TABLE {_tb} ({txt})', _w_con):
             _write(f'\t{GRY}[DB_{_tb}][{GRN}True{GRY}]{DF}')
@@ -244,7 +249,7 @@ def __get_env():
         dct = {}; vt = {}
         for ctb in config('MDB_W_CTBS').split('; '):
             for ttb in ctb[ctb.find('(')+1: ctb.rfind(')')].split(', '):
-                dct |= (lambda vr, tp: {vr : tp})(*ttb.split())
+                dct |= (lambda vr, tp, *_: {vr : tp})(*ttb.split())
             vt[ctb[13:ctb.find('(')-1]] = dct; dct = {}
         return {
             '_write'  : eval(config('MDB_W_WRITE')),
@@ -315,10 +320,11 @@ def __console_elem_tb_insert(_write : Callable[[str], None], _ctbs : Dict, _w_co
         vals = []
         _write(f'\n\t{GRY}[INSERT_{tb}]{DF}')
         for _vtb, _ttb in zip(_ctbs[tb].keys(), _ctbs[tb].values()):
-            data = input(f'\t{YLW}{_vtb} <{_ttb}> = (null) {DF}')
-            vals.append(data if data else 'null')
+            if _ttb != 'serial':
+                data = input(f'\t{YLW}{_vtb} <{_ttb}> = (null) {DF}')
+                vals.append(data if data else 'null')
     
-        if insert_db(tb, list(_ctbs[tb].keys()), vals, _w_con):
+        if insert_db(tb, [it for it in _ctbs[tb].keys() if _ctbs[tb][it] != 'serial'], vals, _w_con):
             _write(f'\t{GRY}[INSERT_{tb}][{GRN}True{GRY}]{DF}')
         else:
             _write(f'\t{GRY}[INSERT_{tb}][{RED}False{GRY}]{DF}')
@@ -362,6 +368,16 @@ def __show_tb_elems(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict,
     _write(f'\t{GRY}-----------------------------{DF}')
 #\------------------------------------------------------------------/# 
 
+
+#\------------------------------------------------------------------/# 
+@mlogger.logging()
+def __reset_env() -> Dict:
+    if os.path.exists('.env'):
+        os.remove('.env')
+    __init_env()
+    return __get_env()
+#\------------------------------------------------------------------/# 
+
     
 #\==================================================================/#
 if __name__ == "__main__":
@@ -391,4 +407,6 @@ if __name__ == "__main__":
     for _dvar in _dvars: 
         if _dvar in DB_CNTRL: 
             DB_CNTRL[_dvar](**_args)
+        elif _dvar == '-r':
+            _args = __reset_env()
 #\==================================================================/#
