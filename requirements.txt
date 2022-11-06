@@ -1,4 +1,4 @@
-decouple==0.0.7
 exclog==0.0.1
 progress==1.6
 psycopg2-binary==2.9.5
+python-decouple==3.6
