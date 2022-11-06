@@ -15,10 +15,7 @@ from progress.bar import IncrementalBar
 from decouple     import config
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-import os
-
-if __name__ == "__main__":
-    import mlogger
+import os, exclog
 #\------------------------------------------------------------------/#
 
 
@@ -30,7 +27,7 @@ DBRESP = 'SELECT COUNT(1) FROM'
 
 
 #\------------------------------------------------------------------/#
-@mlogger.logging()
+@exclog.logging()
 def __connect(conn_kwrgs) -> Tuple[Any, Any]:
     """This definition returns connection to database."""
     return connect_db(**conn_kwrgs)
@@ -38,7 +35,7 @@ def __connect(conn_kwrgs) -> Tuple[Any, Any]:
 
 
 #\------------------------------------------------------------------/#
-@mlogger.logging()
+@exclog.logging()
 def push_msg(msg : str | sql.SQL, conn_kwrgs, ftch=False, rmsg=False) -> Any | bool:
     """This definition sends message to database."""
     con = __connect(conn_kwrgs); data = [False, False]
@@ -96,7 +93,7 @@ def insert_db(_tb : str, _set : List, _vls : List, _w_con : Dict) -> str | bool:
 
 
 #\------------------------------------------------------------------/#
-@mlogger.logging()
+@exclog.logging()
 def __dump_tables(_write : Callable[[str], None], _tbs : str, _w_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}-----------DUMP-TBS-----------{DF}')
 
@@ -115,7 +112,7 @@ def __dump_tables(_write : Callable[[str], None], _tbs : str, _w_con : Dict, **_
 
 
 #\------------------------------------------------------------------/#
-@mlogger.logging()
+@exclog.logging()
 def __load_tables(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}-----------LOAD-TBS-----------{DF}')
     for _tb in _ctbs.keys():
@@ -153,7 +150,7 @@ def __load_tables(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, *
 
 
 #\------------------------------------------------------------------/# 
-@mlogger.logging()
+@exclog.logging()
 def __cr_database(_write : Callable[[str], None], _w_con : Dict, _p_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}----------CREATE-DB-----------{DF}')
 
@@ -180,7 +177,7 @@ def __cr_database(_write : Callable[[str], None], _w_con : Dict, _p_con : Dict, 
 
 
 #\------------------------------------------------------------------/# 
-@mlogger.logging()
+@exclog.logging()
 def __cr_tables(_write : Callable[[str], None], _ctbs : List, _w_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}----------CREATE-TBS----------{DF}')
     for _ctb, _tb in zip(_ctbs.values(), _ctbs.keys()):
@@ -243,7 +240,7 @@ def __save_txt(txt : str, _fl : str, _m = 'a', _c = 'utf-8') -> int:
 
 
 #\------------------------------------------------------------------/# 
-@mlogger.logging()
+@exclog.logging()
 def __get_env():
     if os.path.exists('.env'):
         dct = {}; vt = {}
@@ -276,7 +273,7 @@ def __get_env():
 
 
 #\------------------------------------------------------------------/# 
-@mlogger.logging()
+@exclog.logging()
 def __init_env():
     
     print(f'\t{GRY}------------Params------------\n\t() <- default params\n\t<> <- input example{DF}')
@@ -312,7 +309,7 @@ def __init_env():
 
 
 #\------------------------------------------------------------------/# 
-@mlogger.logging()
+@exclog.logging()
 def __console_elem_tb_insert(_write : Callable[[str], None], _ctbs : Dict, _w_con : List, **_) -> None:
     _write(f'\t{GRY}------------Params------------\n\t() <- default params. Enter to full insert.{DF}')
     tbs = input(f'\t{YLW}Enter table(-s) to use ({list(_ctbs.keys())}): {DF}').split(', ')
@@ -333,7 +330,7 @@ def __console_elem_tb_insert(_write : Callable[[str], None], _ctbs : Dict, _w_co
 
 
 #\------------------------------------------------------------------/# 
-@mlogger.logging()
+@exclog.logging()
 def __show_tb_elems(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, **_) -> None:
     _write(f'\t{GRY}------------Params------------\n\t() <- default params. Enter to show all.{DF}')
     tbs = input(f'\t{YLW}Enter table(-s) to use ({list(_ctbs.keys())}): {DF}').split(', ')
@@ -370,7 +367,7 @@ def __show_tb_elems(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict,
 
 
 #\------------------------------------------------------------------/# 
-@mlogger.logging()
+@exclog.logging()
 def __reset_env() -> Dict:
     if os.path.exists('.env'):
         os.remove('.env')
