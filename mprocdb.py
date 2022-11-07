@@ -27,7 +27,7 @@ DBRESP = 'SELECT COUNT(1) FROM'
 
 
 #\------------------------------------------------------------------/#
-@exclog.logging()
+@exclog.logging(t='\t')
 def __connect(conn_kwrgs) -> Tuple[Any, Any]:
     """This definition returns connection to database."""
     return connect_db(**conn_kwrgs)
@@ -35,7 +35,7 @@ def __connect(conn_kwrgs) -> Tuple[Any, Any]:
 
 
 #\------------------------------------------------------------------/#
-@exclog.logging()
+@exclog.logging(t='\t')
 def push_msg(msg : str | sql.SQL, conn_kwrgs, ftch=False, rmsg=False) -> Any | bool:
     """This definition sends message to database."""
     con = __connect(conn_kwrgs); data = [False, False]
@@ -81,19 +81,19 @@ def insert_db(_tb : str, _set : List, _vls : List, _w_con : Dict) -> str | bool:
 
 
 #\------------------------------------------------------------------/#
-#def update_db(msg : str, _tb : str, _p_con : Dict) -> str | bool:
-#    return push_msg(f'{msg}; {DBRESP} {_tb}', _p_con)
+def update_db(msg : str, _tb : str, _p_con : Dict) -> str | bool:
+    return push_msg(f'{msg}; {DBRESP} {_tb}', _p_con)
 #\------------------------------------------------------------------/#
 
 
 #\------------------------------------------------------------------/#
-#def delete_db(cnd : str, _tb : str, _p_con : Dict) -> str | bool:
-#    return push_msg(f'DELETE FROM {_tb} WHERE {cnd}; {DBRESP} {_tb}', _p_con)
+def delete_db(cnd : str, _tb : str, _p_con : Dict) -> str | bool:
+    return push_msg(f'DELETE FROM {_tb} WHERE {cnd}; {DBRESP} {_tb}', _p_con)
 #\------------------------------------------------------------------/#
 
 
 #\------------------------------------------------------------------/#
-@exclog.logging()
+@exclog.logging(t='\t')
 def __dump_tables(_write : Callable[[str], None], _tbs : str, _w_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}-----------DUMP-TBS-----------{DF}')
 
@@ -112,7 +112,7 @@ def __dump_tables(_write : Callable[[str], None], _tbs : str, _w_con : Dict, **_
 
 
 #\------------------------------------------------------------------/#
-@exclog.logging()
+@exclog.logging(t='\t')
 def __load_tables(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}-----------LOAD-TBS-----------{DF}')
     for _tb in _ctbs.keys():
@@ -150,7 +150,7 @@ def __load_tables(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, *
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging()
+@exclog.logging(t='\t')
 def __cr_database(_write : Callable[[str], None], _w_con : Dict, _p_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}----------CREATE-DB-----------{DF}')
 
@@ -172,12 +172,18 @@ def __cr_database(_write : Callable[[str], None], _w_con : Dict, _p_con : Dict, 
     else:
         _write(f'\t{GRY}[GRANT_PRIVILEGES][{RED}False{GRY}]{DF}\n')
 
+    _write(f'\t{GRY}[GRANT_USAGE]{DF}')
+    if push_msg(f'ALTER DATABASE {_w_con["dbname"]} owner TO {_w_con["user"]}', _p_con):
+        _write(f'\t{GRY}[GRANT_USAGE][{GRN}True{GRY}]{DF}\n')
+    else:
+        _write(f'\t{GRY}[GRANT_USAGE][{RED}False{GRY}]{DF}\n')
+        
     _write(f'\t{GRY}------------------------------{DF}\n')
 #\------------------------------------------------------------------/#
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging()
+@exclog.logging(t='\t')
 def __cr_tables(_write : Callable[[str], None], _ctbs : List, _w_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}----------CREATE-TBS----------{DF}')
     for _ctb, _tb in zip(_ctbs.values(), _ctbs.keys()):
@@ -240,7 +246,7 @@ def __save_txt(txt : str, _fl : str, _m = 'a', _c = 'utf-8') -> int:
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging()
+@exclog.logging(t='\t')
 def __get_env():
     if os.path.exists('.env'):
         dct = {}; vt = {}
@@ -273,7 +279,7 @@ def __get_env():
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging()
+@exclog.logging(t='\t')
 def __init_env():
     
     print(f'\t{GRY}------------Params------------\n\t() <- default params\n\t<> <- input example{DF}')
@@ -309,7 +315,7 @@ def __init_env():
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging()
+@exclog.logging(t='\t')
 def __console_elem_tb_insert(_write : Callable[[str], None], _ctbs : Dict, _w_con : List, **_) -> None:
     _write(f'\t{GRY}------------Params------------\n\t() <- default params. Enter to full insert.{DF}')
     tbs = input(f'\t{YLW}Enter table(-s) to use ({list(_ctbs.keys())}): {DF}').split(', ')
@@ -330,7 +336,7 @@ def __console_elem_tb_insert(_write : Callable[[str], None], _ctbs : Dict, _w_co
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging()
+@exclog.logging(t='\t')
 def __show_tb_elems(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, **_) -> None:
     _write(f'\t{GRY}------------Params------------\n\t() <- default params. Enter to show all.{DF}')
     tbs = input(f'\t{YLW}Enter table(-s) to use ({list(_ctbs.keys())}): {DF}').split(', ')
@@ -367,7 +373,7 @@ def __show_tb_elems(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict,
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging()
+@exclog.logging(t='\t')
 def __reset_env() -> Dict:
     if os.path.exists('.env'):
         os.remove('.env')
