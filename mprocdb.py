@@ -7,15 +7,16 @@
 #\==================================================================/#
 
 #/-----------------------------/ Libs \-----------------------------\#
-from sys          import argv as _dvars
-from typing       import Any, Callable, Dict, List, Tuple
-from json         import dump as _dump, load as _load
-from psycopg2     import connect as connect_db, sql
+from typing import (
+    Callable, Tuple,
+    Dict, List, Any
+)
+
 from progress.bar import IncrementalBar
 from decouple     import config
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-import os, exclog
+import os, sys, json
+import psycopg2, exclog
 #\------------------------------------------------------------------/#
 
 
@@ -30,13 +31,14 @@ DBRESP = 'SELECT COUNT(1) FROM'
 @exclog.logging(t='\t')
 def __connect(conn_kwrgs) -> Tuple[Any, Any]:
     """This definition returns connection to database."""
-    return connect_db(**conn_kwrgs)
+    return psycopg2.connect(**conn_kwrgs)
 #\------------------------------------------------------------------/#
 
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 #\------------------------------------------------------------------/#
 @exclog.logging(t='\t')
-def push_msg(msg : str | sql.SQL, conn_kwrgs, ftch=False, rmsg=False) -> Any | bool:
+def push_msg(msg : str | psycopg2.sql.SQL, conn_kwrgs, ftch=False, rmsg=False) -> Any | bool:
     """This definition sends message to database."""
     con = __connect(conn_kwrgs); data = [False, False]
     con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -101,7 +103,7 @@ def __dump_tables(_write : Callable[[str], None], _tbs : str, _w_con : Dict, **_
         _write(f'\t{GRY}[DUMP_{YLW}{_tb}{GRY}]{DF}')
         data = get_db(_tb, _w_con)
         if data:
-            _dump(data, open(f'{_tb}.json', 'w'))
+            json.dump(data, open(f'{_tb}.json', 'w'))
             _write(f'\t{GRY}[DUMP_{YLW}{_tb}{GRY}][{GRN}True{GRY}]{DF}')
         else:
             _write(f'\t{GRY}[DUMP_{YLW}{_tb}{GRY}][{RED}False{GRY}]{DF}')
@@ -116,7 +118,7 @@ def __dump_tables(_write : Callable[[str], None], _tbs : str, _w_con : Dict, **_
 def __load_tables(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}-----------LOAD-TBS-----------{DF}')
     for _tb in _ctbs.keys():
-        elems = _load(open(f'{_tb}.json'))[0]
+        elems = json.load(open(f'{_tb}.json'))[0]
         bar = IncrementalBar(f'\t{GRY}[LOAD_{_tb}]', max = len(elems))
         for elem in elems:
             bar.next(); vls = []
@@ -155,7 +157,7 @@ def __cr_database(_write : Callable[[str], None], _w_con : Dict, _p_con : Dict, 
     _write(f'\n\t{GRY}----------CREATE-DB-----------{DF}')
 
     _write(f'\t{GRY}[CR_DB_{_w_con["dbname"]}]{DF}')
-    if push_msg(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(_w_con["dbname"])), _p_con):
+    if push_msg(psycopg2.sql.SQL("CREATE DATABASE {}").format(psycopg2.sql.Identifier(_w_con["dbname"])), _p_con):
         _write(f'\t{GRY}[CR_DB_{_w_con["dbname"]}][{GRN}True{GRY}]{DF}\n')
     else:
         _write(f'\t{GRY}[CR_DB_{_w_con["dbname"]}][{RED}False{GRY}]{DF}\n')
@@ -407,7 +409,7 @@ if __name__ == "__main__":
     if not _args:
         __init_env(); _args = __get_env()
 
-    for _dvar in _dvars: 
+    for _dvar in sys.argv: 
         if _dvar in DB_CNTRL: 
             DB_CNTRL[_dvar](**_args)
         elif _dvar == '-r':
