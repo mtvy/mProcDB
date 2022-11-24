@@ -17,6 +17,8 @@ from decouple     import config
 
 import os, sys, json
 import psycopg2, exclog
+
+from psycopg2 import sql
 #\------------------------------------------------------------------/#
 
 
@@ -38,7 +40,7 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 #\------------------------------------------------------------------/#
 @exclog.logging(t='\t')
-def push_msg(msg : str | psycopg2.sql.SQL, conn_kwrgs, ftch=False, rmsg=False) -> Any | bool:
+def push_msg(msg : str | sql.SQL, conn_kwrgs, ftch=False, rmsg=False) -> Any | bool:
     """This definition sends message to database."""
     con = __connect(conn_kwrgs); data = [False, False]
     con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -383,7 +385,14 @@ def __reset_env() -> Dict:
     return __get_env()
 #\------------------------------------------------------------------/# 
 
+
+#\------------------------------------------------------------------/# 
+@exclog.logging(t='\t')
+def get_env():
+    return __get_env()
+#\------------------------------------------------------------------/# 
     
+
 #\==================================================================/#
 if __name__ == "__main__":
 
