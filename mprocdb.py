@@ -28,9 +28,12 @@ GRY="\033[1;37m"; YLW="\033[1;33m"; DF="\033[0m"; GRN="\033[1;32m"; RED="\033[1;
 DBRESP = 'SELECT COUNT(1) FROM'
 #\------------------------------------------------------------------/#
 
+def _fprint(out, file=sys.stderr):
+    print(out, file=file)
+
 
 #\------------------------------------------------------------------/#
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def __connect(conn_kwrgs) -> Tuple[Any, Any]:
     """This definition returns connection to database."""
     return psycopg2.connect(**conn_kwrgs)
@@ -39,12 +42,12 @@ def __connect(conn_kwrgs) -> Tuple[Any, Any]:
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 #\------------------------------------------------------------------/#
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def push_msg(msg : str | sql.SQL, conn_kwrgs, ftch=False, rmsg=False) -> Any | bool:
     """This definition sends message to database."""
     con = __connect(conn_kwrgs); data = [False, False]
     con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-
+    print("pusssssss")
     if con:
         cur = con.cursor()
         cur.execute(msg)
@@ -97,7 +100,7 @@ def delete_db(cnd : str, _tb : str, _p_con : Dict) -> str | bool:
 
 
 #\------------------------------------------------------------------/#
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def __dump_tables(_write : Callable[[str], None], _tbs : str, _w_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}-----------DUMP-TBS-----------{DF}')
 
@@ -116,7 +119,7 @@ def __dump_tables(_write : Callable[[str], None], _tbs : str, _w_con : Dict, **_
 
 
 #\------------------------------------------------------------------/#
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def __load_tables(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}-----------LOAD-TBS-----------{DF}')
     for _tb in _ctbs.keys():
@@ -154,7 +157,7 @@ def __load_tables(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, *
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def __cr_database(_write : Callable[[str], None], _w_con : Dict, _p_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}----------CREATE-DB-----------{DF}')
 
@@ -187,7 +190,7 @@ def __cr_database(_write : Callable[[str], None], _w_con : Dict, _p_con : Dict, 
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def __cr_tables(_write : Callable[[str], None], _ctbs : List, _w_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}----------CREATE-TBS----------{DF}')
     for _ctb, _tb in zip(_ctbs.values(), _ctbs.keys()):
@@ -250,7 +253,7 @@ def __save_txt(txt : str, _fl : str, _m = 'a', _c = 'utf-8') -> int:
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def __get_env():
     if os.path.exists('.env'):
         dct = {}; vt = {}
@@ -283,7 +286,7 @@ def __get_env():
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def __init_env():
     
     print(f'\t{GRY}------------Params------------\n\t() <- default params\n\t<> <- input example{DF}')
@@ -319,7 +322,7 @@ def __init_env():
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def __console_elem_tb_insert(_write : Callable[[str], None], _ctbs : Dict, _w_con : List, **_) -> None:
     _write(f'\t{GRY}------------Params------------\n\t() <- default params. Enter to full insert.{DF}')
     tbs = input(f'\t{YLW}Enter table(-s) to use ({list(_ctbs.keys())}): {DF}').split(', ')
@@ -340,7 +343,7 @@ def __console_elem_tb_insert(_write : Callable[[str], None], _ctbs : Dict, _w_co
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def __show_tb_elems(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict, **_) -> None:
     _write(f'\t{GRY}------------Params------------\n\t() <- default params. Enter to show all.{DF}')
     tbs = input(f'\t{YLW}Enter table(-s) to use ({list(_ctbs.keys())}): {DF}').split(', ')
@@ -377,7 +380,7 @@ def __show_tb_elems(_write : Callable[[str], None], _ctbs : Dict, _w_con : Dict,
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def __reset_env() -> Dict:
     if os.path.exists('.env'):
         os.remove('.env')
@@ -387,7 +390,7 @@ def __reset_env() -> Dict:
 
 
 #\------------------------------------------------------------------/# 
-@exclog.logging(t='\t')
+@exclog.logging(out=_fprint)
 def get_env():
     return __get_env()
 #\------------------------------------------------------------------/# 
