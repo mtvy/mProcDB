@@ -191,7 +191,7 @@ def __cr_database(_write : Callable[[str], None], _w_con : Dict, _p_con : Dict, 
 
 #\------------------------------------------------------------------/# 
 @exclog.logging(out=_fprint)
-def __cr_tables(_write : Callable[[str], None], _ctbs : List, _w_con : Dict, **_) -> None:
+def cr_tables(_write : Callable[[str], None], _ctbs : List, _w_con : Dict, **_) -> None:
     _write(f'\n\t{GRY}----------CREATE-TBS----------{DF}')
     for _ctb, _tb in zip(_ctbs.values(), _ctbs.keys()):
         txt = ''; _write(f'\t{GRY}[DB_{_tb}]{DF}')
@@ -410,7 +410,7 @@ if __name__ == "__main__":
         '-s' : __dump_tables,
         '-l' : __load_tables,
         '-d' : __cr_database,
-        '-c' : __cr_tables,
+        '-c' : cr_tables,
         '-h' : __help_msg,
         '-p' : __show_prms,
         '-a' : __console_elem_tb_insert,
