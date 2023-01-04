@@ -47,7 +47,6 @@ def push_msg(msg : str | sql.SQL, conn_kwrgs, ftch=False, rmsg=False) -> Any | b
     """This definition sends message to database."""
     con = __connect(conn_kwrgs); data = [False, False]
     con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-    print("pusssssss")
     if con:
         cur = con.cursor()
         cur.execute(msg)
